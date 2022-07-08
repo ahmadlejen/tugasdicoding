@@ -70,7 +70,7 @@ const getBooks = (request, h) => {
   const {name, reading, finished}=request.query;
   if (name) {
     const booksFilter = books.filter((
-        book) => book.name.toLowerCase().includes(name.toLowerCase()));
+        book) => book.name.toUpperCase().includes(name.toUpperCase()));
     const filteredBooks=booksFilter.map((book) => ({
       id: book.id,
       name: book.name,
