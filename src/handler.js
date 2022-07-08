@@ -1,4 +1,3 @@
-
 const {nanoid} = require('nanoid');
 const books= require('./books');
 const addBooks = (request, h) => {
@@ -12,7 +11,7 @@ const addBooks = (request, h) => {
     readPage,
     reading,
   } = request.payload;
-  if (!name ) {
+  if (!name) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal menambahkan buku. Mohon isi nama buku',
@@ -68,19 +67,71 @@ const addBooks = (request, h) => {
   return response;
 };
 const getBooks = (request, h) => {
-  const fullBooks=books.map((book)=>({
-    id: book.id,
-    name: book.name,
-    publisher: book.publisher}));
-  if (books.length!==0) {
+  const {name, reading, finished}=request.query;
+  if (name) {
+    const booksFilter = books.filter((
+        book) => book.name.toLowerCase().includes(name.toLowerCase()));
+    const filteredBooks=booksFilter.map((book) => ({
+      id: book.id,
+      name: book.name,
+      publisher: book.publisher,
+    }));
     const response = h.response({
       status: 'success',
       data: {
-        books: fullBooks,
+        books: filteredBooks,
       },
     });
     response.code(200);
     return response;
+  }
+  if (reading) {
+    if (reading == 1) {
+      return {status: 'success',
+        data: {
+          books: books.filter((book)=> book.reading==1).map((book)=>
+            ({
+              id: book.id,
+              name: book.name,
+              publisher: book.publisher,
+            })),
+        },
+      };
+    }
+    return {status: 'success',
+      data: {
+        books: books.filter((book)=> book.reading==0).map((book)=>
+          ({
+            id: book.id,
+            name: book.name,
+            publisher: book.publisher,
+          })),
+      },
+    };
+  }
+  if (finished) {
+    if (finished == 1) {
+      return {status: 'success',
+        data: {
+          books: books.filter((book)=>book.finished==1).map((book)=>
+            ({
+              id: book.id,
+              name: book.name,
+              publisher: book.publisher,
+            })),
+        },
+      };
+    }
+    return {status: 'success',
+      data: {
+        books: books.filter((book)=>book.finished==0).map((book)=>
+          ({
+            id: book.id,
+            name: book.name,
+            publisher: book.publisher,
+          })),
+      },
+    };
   }
   const response = h.response({
     status: 'success',
@@ -93,23 +144,21 @@ const getBooks = (request, h) => {
 };
 const showBooks = (request, h) => {
   const {id} = request.params;
-
   const book = books.filter((buku) => buku.id === id)[0];
-
-  if (book === undefined) {
+  if (book) {
     const response = h.response({
-      status: 'fail',
-      messsage: 'Buku tidak ditemukan',
-    });
-    response.code(404);
+      status: 'success',
+      data: {
+        book,
+      },
+    },
+    );
+    response.code(200);
     return response;
   }
-
   const response = h.response({
-    status: 'success',
-    data: {
-      books,
-    },
+    status: 'fail',
+    messsage: 'Buku tidak ditemukan',
   });
   response.code(404);
   return response;
@@ -126,7 +175,7 @@ const putBooks = (request, h) => {
     readPage,
     reading,
   } = request.payload;
-  if (name.length === undefined) {
+  if (!name) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal memperbarui buku. Mohon isi nama buku',
@@ -144,7 +193,7 @@ const putBooks = (request, h) => {
     return response;
   }
   const index = books.findIndex((book) => book.id === id);
-  if (index === -1) {
+  if (index < 0) {
     const response = h.response({
       status: 'fail',
       message: 'Gagal memperbarui buku. Id tidak ditemukan',
@@ -152,6 +201,8 @@ const putBooks = (request, h) => {
     response.code(404);
     return response;
   }
+  const finished = pageCount === readPage;
+  const updatedAt = new Date().toISOString();
   books[index] = {
     ...books[index],
     name,
@@ -162,6 +213,8 @@ const putBooks = (request, h) => {
     pageCount,
     readPage,
     reading,
+    finished,
+    updatedAt,
   };
   const response = h.response({
     status: 'success',
